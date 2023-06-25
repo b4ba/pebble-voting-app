@@ -19,6 +19,10 @@ import (
 
 const curveID = ecc.BLS12_381
 
+/*
+appendUint32 and getUint32:
+Helper functions to append and retrieve uint32 values from byte slices.
+*/
 func appendUint32(slice []byte, value uint32) []byte {
 	return append(slice, byte(value), byte(value>>8), byte(value>>16), byte(value>>24))
 }
@@ -27,6 +31,11 @@ func getUint32(slice []byte) uint32 {
 	return uint32(slice[0]) | (uint32(slice[1]) << 8) | (uint32(slice[2]) << 16) | (uint32(slice[3]) << 24)
 }
 
+/*
+AnonCred1: A struct representing the AnonCred1 credential system.
+It contains the depth of the Merkle tree, the compiled constraint system (cs),
+the proving key (pk), and the verifying key (vk).
+*/
 type AnonCred1 struct {
 	depth int
 	cs    frontend.CompiledConstraintSystem
@@ -76,6 +85,10 @@ func (params *AnonCred1) FromBytes(buffer []byte) (err error) {
 	return
 }
 
+/*
+anonCred1Circuit struct: Represents the circuit for the AnonCred1 system.
+It defines the variables used in the circuit MessageHash, SerialNo, etc.
+*/
 type anonCred1Circuit struct {
 	MessageHash frontend.Variable `gnark:",public"`
 	SerialNo    frontend.Variable `gnark:",public"`
@@ -94,17 +107,20 @@ type anonCred1Proof struct {
 	Proof       []byte
 }
 
+// Computes the SHA256 hash of a message.
 func hashMsg(data []byte) []byte {
 	res := sha256.Sum256(data)
 	return res[:]
 }
 
+// Computes the hash of two circuit variables using a MiMC hash function.
 func hashVars(h *mimc.MiMC, d1, d2 frontend.Variable) frontend.Variable {
 	h.Reset()
 	h.Write(d1, d2)
 	return h.Sum()
 }
 
+// Computes the hash of two byte slices using a hash.Hash implementation.
 func hashBytes(h hash.Hash, d1, d2 []byte) (b []byte, err error) {
 	h.Reset()
 	if _, err = h.Write(d1); err != nil {
@@ -134,6 +150,10 @@ func (circuit *anonCred1Circuit) Define(curveID ecc.ID, api frontend.API) error 
 	return nil
 }
 
+/*
+This function sets up the circuit for the AnonCred1 system with the specified depth.
+It compiles the circuit using the specified depth and assigns the compiled constraint system, proving key, and verifying key to the AnonCred1 struct.
+*/
 func (params *AnonCred1) SetupCircuit(depth int) error {
 	var circuit anonCred1Circuit
 	circuit.Directions = make([]frontend.Variable, depth)
@@ -150,6 +170,13 @@ func (params *AnonCred1) SetupCircuit(depth int) error {
 	return err
 }
 
+/*
+This function generates a proof for the given secret credential and message.
+It takes the secret credential, its index in the credential set, and the array of all credentials as inputs.
+It uses a hash function to compute the signature and constructs a witness for the circuit.
+Then, it performs a proof generation using the proving key and the witness to generate a Groth16 proof.
+The resulting proof is stored in the proof parameter.
+*/
 func (params *AnonCred1) prove(proof *anonCred1Proof, secret []byte, idx int, credentials [][]byte) (err error) {
 	hFunc := bls381_mimc.NewMiMC("anoncred1")
 	if proof.Signature, err = hashBytes(hFunc, proof.MessageHash, secret); err != nil {
@@ -215,6 +242,11 @@ func (params *AnonCred1) prove(proof *anonCred1Proof, secret []byte, idx int, cr
 	return
 }
 
+/*
+This function verifies the provided proof for the given message.
+It takes a proof struct as input, which includes the message, signature, Merkle root, and the proof itself.
+It uses the verifying key to verify the validity of the proof against the provided circuit.
+*/
 func (params *AnonCred1) verify(proof anonCred1Proof) (err error) {
 	groth16Proof := groth16.NewProof(curveID)
 	if _, err = groth16Proof.ReadFrom(bytes.NewReader(proof.Proof)); err != nil {
@@ -253,6 +285,7 @@ func hashMerkleTree(hashes [][]byte, depth int) (root []byte, err error) {
 	return hashes[0], nil
 }
 
+// Generates a random scalar by generating random bytes and hashing them with a MiMC hash function.
 func generateRandomScalar() (res []byte, err error) {
 	res = make([]byte, 32)
 	if _, err = rand.Read(res); err != nil {
@@ -337,6 +370,7 @@ func (set *anonCred1Set) Less(i, j int) bool {
 	a := set.creds[i]
 	b := set.creds[j]
 	for i = 0; i < 32; i++ {
+		// compare credentials based on their byte slices.
 		if a[i] >= b[i] {
 			return false
 		}
@@ -345,11 +379,18 @@ func (set *anonCred1Set) Less(i, j int) bool {
 }
 
 func (set *anonCred1Set) Swap(i, j int) {
+	// swap credentials in the set.
 	t := set.creds[i]
 	set.creds[i] = set.creds[j]
 	set.creds[j] = t
 }
 
+/*
+This function creates a credential set from the given array of public credentials.
+It takes an array of PublicCredential and returns a CredentialSet.
+It removes any duplicate credentials and constructs a Merkle tree from the remaining unique credentials.
+The root of the Merkle tree is used as the Merkle root in the CredentialSet.
+*/
 func (params *AnonCred1) MakeCredentialSet(credentials []PublicCredential) (CredentialSet, error) {
 	set := new(anonCred1Set)
 	set.params = params
@@ -381,6 +422,7 @@ func (params *AnonCred1) MakeCredentialSet(credentials []PublicCredential) (Cred
 	return set, nil
 }
 
+// Generate a signature for a given secret credential and message.
 func (set *anonCred1Set) Sign(secret SecretCredential, msg []byte) ([]byte, error) {
 	switch sec := secret.(type) {
 	case *anonCred1SecCred:
@@ -413,6 +455,7 @@ func (set *anonCred1Set) Sign(secret SecretCredential, msg []byte) ([]byte, erro
 	}
 }
 
+// Verify the signature using the provided serial number, signature, and message.
 func (set *anonCred1Set) Verify(serialNo, sig, msg []byte) error {
 	if len(serialNo) != 32 {
 		return fmt.Errorf("len(serialNo) != 32")

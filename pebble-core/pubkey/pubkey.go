@@ -12,8 +12,11 @@ import (
 	"github.com/giry-dev/pebble-voting-app/pebble-core/util"
 )
 
+//  It represents a public key and is defined as a byte slice.
 type PublicKey []byte
 
+// It represents a private key and consists of a public key (PublicKey)
+// and a byte slice representing the secret part of the key.
 type PrivateKey struct {
 	p PublicKey
 	s []byte
@@ -37,6 +40,7 @@ var (
 
 var noHashSignerOpts crypto.SignerOpts = crypto.Hash(0)
 
+// Creates a new PublicKey by combining the key type and key data.
 func newPublicKey(t KeyType, k []byte) PublicKey {
 	p := make(PublicKey, len(k)+1)
 	p[0] = byte(t)
@@ -44,6 +48,7 @@ func newPublicKey(t KeyType, k []byte) PublicKey {
 	return p
 }
 
+// Returns the key type of a given PublicKey or PrivateKey instance.
 func (k PublicKey) Type() KeyType {
 	if len(k) < 1 {
 		return KeyTypeUnknown
@@ -55,14 +60,22 @@ func (k PrivateKey) Type() KeyType {
 	return k.p.Type()
 }
 
+// Returns the public key part of a PrivateKey instance.
 func (k PrivateKey) Public() PublicKey {
 	return k.p
 }
 
+// Returns the secret key data of a PrivateKey instance.
 func (k PrivateKey) Secret() []byte {
 	return k.s
 }
 
+/*
+It generates a new private key based on the specified key type.
+The function supports key types KeyTypeEd25519 and KeyTypeTezos.
+For KeyTypeEd25519, it uses the ed25519 package to generate the key pair.
+For KeyTypeTezos, it uses the tezos package.
+*/
 func GenerateKey(keyType KeyType) (k PrivateKey, err error) {
 	switch keyType {
 	case KeyTypeEd25519:
@@ -83,6 +96,7 @@ func GenerateKey(keyType KeyType) (k PrivateKey, err error) {
 	}
 }
 
+// Signs a message using the private key.
 func (k PrivateKey) Sign(msg []byte) ([]byte, error) {
 	switch k.Type() {
 	case KeyTypeEd25519:
@@ -103,6 +117,7 @@ func (k PrivateKey) Sign(msg []byte) ([]byte, error) {
 	}
 }
 
+// Verifies the signature of a message using the corresponding public key.
 func (k PublicKey) Verify(msg, sig []byte) error {
 	if len(k) == 0 {
 		return ErrInvalidKeyLength
@@ -138,6 +153,12 @@ func (k PublicKey) Verify(msg, sig []byte) error {
 	}
 }
 
+/*
+It converts a PublicKey to its string representation.
+The function supports key types KeyTypeEd25519 and KeyTypeTezos.
+For KeyTypeEd25519, it uses the base32c encoding.
+For KeyTypeTezos, it converts the PublicKey to a tezos.Key type and returns its string representation.
+*/
 func (k PublicKey) String() (string, error) {
 	if len(k) == 0 {
 		return "", ErrInvalidKeyLength
@@ -160,6 +181,8 @@ func (k PublicKey) String() (string, error) {
 	}
 }
 
+// Parses a string representation of a public key and returns a PublicKey.
+// The function supports parsing keys in both base32c and tz formats.
 func Parse(s string) (PublicKey, error) {
 	if strings.HasPrefix(s, "EPK") {
 		p, err := base32c.CheckDecode(s)

@@ -20,6 +20,7 @@ var (
 
 type ElectionID = [32]byte
 
+// Represents an election and contains various components and parameters related to the election
 type Election struct {
 	credSys anoncred.CredentialSystem
 	channel BroadcastChannel
@@ -29,12 +30,20 @@ type Election struct {
 	params  *ElectionParams
 }
 
+// Represents the progress of an election, including the current phase,
+// the count and total number of processed items, and the tally (if applicable).
 type ElectionProgress struct {
 	Phase        ElectionPhase
 	Count, Total int
 	Tally        methods.Tally
 }
 
+/*
+Creates a new Election instance.
+Initializes the credential system, voting method, VDF, and other components based on the provided broadcast channel and secrets manager.
+Retrieves the election parameters from the broadcast channel.
+Returns the created Election instance or an error.
+*/
 func NewElection(ctx context.Context, bc BroadcastChannel, sec secrets.SecretsManager) (*Election, error) {
 	if anoncred.AnonCred1Instance == nil {
 		return nil, errors.New("pebble: anoncred.AnonCred1Instance is nil")
@@ -61,22 +70,34 @@ func NewElection(ctx context.Context, bc BroadcastChannel, sec secrets.SecretsMa
 	}, nil
 }
 
+// Returns the election parameters of the Election instance.
 func (e *Election) Params() *ElectionParams {
 	return e.params
 }
 
+//  Returns the current phase of the election.
 func (e *Election) Phase() ElectionPhase {
 	return e.params.Phase()
 }
 
+// Returns the ID of the election.
 func (e *Election) Id() ElectionID {
 	return e.channel.Id()
 }
 
+// Returns the broadcast channel associated with the election.
 func (e *Election) Channel() BroadcastChannel {
 	return e.channel
 }
 
+/*
+Posts the credential message to the broadcast channel.
+Checks if the current phase of the election allows posting credentials.
+Retrieves the private key and secret credential from the secrets manager.
+Creates and signs the credential message.
+Posts the message to the broadcast channel.
+Returns an error if the phase is incorrect or any step fails.
+*/
 func (e *Election) PostCredential(ctx context.Context) error {
 	if e.params.Phase() != CredGen {
 		return ErrWrongPhase
@@ -102,6 +123,14 @@ func (e *Election) PostCredential(ctx context.Context) error {
 	return e.channel.Post(ctx, Message{Credential: msg})
 }
 
+/*
+Retrieves the credential set from the broadcast channel.
+Checks if the current phase of the election allows retrieving credentials.
+Fetches the messages from the broadcast channel.
+Verifies and reads the public credentials from the received messages.
+Constructs the credential set using the credential system.
+Returns the credential set or an error if the phase is incorrect or any step fails.
+*/
 func (e *Election) GetCredentialSet(ctx context.Context) (anoncred.CredentialSet, error) {
 	if e.params.Phase() <= CredGen {
 		return nil, ErrWrongPhase
@@ -131,6 +160,17 @@ func (e *Election) GetCredentialSet(ctx context.Context) (anoncred.CredentialSet
 	return e.credSys.MakeCredentialSet(list)
 }
 
+/*
+Casts a vote in the election.
+Checks if the current phase of the election allows voting.
+Retrieves the credential set.
+Generates a VDF solution.
+Encrypts the ballot using the VDF solution.
+Signs the encrypted ballot using the credential set and secret credential.
+Stores the signed ballot in the secrets manager.
+Posts the signed ballot to the broadcast channel.
+Returns an error if the phase is incorrect or any step fails.
+*/
 func (e *Election) Vote(ctx context.Context, choices ...int) error {
 	if e.params.Phase() != Cast {
 		return ErrWrongPhase
@@ -168,9 +208,16 @@ func (e *Election) Vote(ctx context.Context, choices ...int) error {
 }
 
 func (e *Election) puzzleDuration() uint64 {
+	// Calculates the duration of the puzzle (VDF) based on the election parameters.
+	// Returns the puzzle duration as a uint64 value.
 	return uint64(e.params.TallyStart.Sub(e.params.CastStart).Seconds())
 }
 
+/*
+Retrieves the VDF solution from the secrets manager.
+Calls PostBallotDecryption with the VDF solution as the parameter.
+Returns an error if the VDF solution retrieval or posting fails.
+*/
 func (e *Election) RevealBallotDecryption(ctx context.Context) error {
 	sol, err := e.secrets.GetVdfSolution()
 	if err != nil {
@@ -179,6 +226,13 @@ func (e *Election) RevealBallotDecryption(ctx context.Context) error {
 	return e.PostBallotDecryption(ctx, sol)
 }
 
+/*
+Posts the ballot decryption message to the broadcast channel.
+Checks if the current phase of the election allows posting ballot decryption.
+Creates the decryption message using the provided VDF solution.
+Posts the message to the broadcast channel.
+Returns an error if the phase is incorrect or any step fails.
+*/
 func (e *Election) PostBallotDecryption(ctx context.Context, sol vdf.VdfSolution) error {
 	if e.params.Phase() != Tally {
 		return ErrWrongPhase
@@ -187,6 +241,13 @@ func (e *Election) PostBallotDecryption(ctx context.Context, sol vdf.VdfSolution
 	return e.channel.Post(ctx, Message{Decryption: &msg})
 }
 
+/*
+Retrieves the progress of the election.
+Determines the current phase of the election.
+Retrieves the credential set and messages from the broadcast channel.
+Processes the signed ballots and decryption messages to calculate the progress.
+Returns an ElectionProgress struct with the phase, count, total, and tally (if applicable), or an error.
+*/
 func (e *Election) Progress(ctx context.Context) (p ElectionProgress, err error) {
 	p.Phase = e.params.Phase()
 	if p.Phase <= CredGen {
@@ -250,6 +311,14 @@ func (e *Election) Progress(ctx context.Context) (p ElectionProgress, err error)
 	return p, nil
 }
 
+/*
+Decrypts an encrypted ballot using the provided decryption messages and VDF.
+Takes the encrypted ballot, decryption messages, and VDF as input.
+Checks if the VDF solution matches the input hash of the encrypted ballot.
+Verifies the VDF solution.
+Decrypts the ballot using the VDF solution.
+Returns the decrypted ballot or an error if the decryption is not found or fails.
+*/
 func decryptBallot(encBallot structs.EncryptedBallot, msgs []structs.DecryptionMessage, ivdf vdf.VDF) (structs.Ballot, error) {
 	vdfInputHash := util.Hash(encBallot.VdfInput)
 	for _, msg := range msgs {

@@ -1,3 +1,8 @@
+/*
+The election_params.go file provides the necessary functionality to serialize and deserialize the election parameters.
+It allows the election parameters to be converted to a byte slice representation that can be stored or transmitted, and vice versa.
+*/
+
 package voting
 
 import (
@@ -12,6 +17,7 @@ var errUnknownVersion = errors.New("pebble: unknown ElectionParams version")
 
 type ElectionPhase uint8
 
+// Represents different phases of an election.
 const (
 	Setup ElectionPhase = iota
 	CredGen
@@ -30,6 +36,7 @@ type ElectionParams struct {
 	EligibilityList                 *structs.EligibilityList
 }
 
+// Returns the current phase of the election based on the current time.
 func (p *ElectionParams) Phase() ElectionPhase {
 	now := time.Now()
 	if now.Before(p.CastStart) {
@@ -43,6 +50,13 @@ func (p *ElectionParams) Phase() ElectionPhase {
 	}
 }
 
+/*
+Serializes the ElectionParams struct into a byte slice.
+Uses a BufferWriter from the util package to write each field in a specific order.
+Converts time values to Unix timestamps and writes them as uint64.
+Writes other fields as vectors of bytes.
+Returns the serialized byte slice.
+*/
 func (p *ElectionParams) Bytes() []byte {
 	var w util.BufferWriter
 	w.WriteUint32(p.Version)
@@ -61,6 +75,13 @@ func (p *ElectionParams) Bytes() []byte {
 	return w.Buffer
 }
 
+/*
+Deserializes a byte slice into an ElectionParams struct.
+Uses a BufferReader from the util package to read the serialized byte slice.
+Reads each field in the reverse order of serialization, extracting the values from the byte slice and assigning them to the corresponding struct fields.
+Converts Unix timestamps back to time values.
+Returns an error if any reading or conversion fails.
+*/
 func (p *ElectionParams) FromBytes(b []byte) (err error) {
 	r := util.NewBufferReader(b)
 	p.Version, err = r.ReadUint32()

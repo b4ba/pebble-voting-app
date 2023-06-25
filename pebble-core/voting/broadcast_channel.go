@@ -7,6 +7,7 @@ import (
 	"github.com/giry-dev/pebble-voting-app/pebble-core/voting/structs"
 )
 
+// Represents a message that can be sent over the broadcast channel.
 type Message struct {
 	ElectionParams *ElectionParams
 	Credential     *structs.CredentialMessage
@@ -14,6 +15,14 @@ type Message struct {
 	Decryption     *structs.DecryptionMessage
 }
 
+/*
+Specifies the methods that a broadcast channel implementation must provide.
+
+Id(): returns the identifier of the election associated with the broadcast channel.
+Params(ctx context.Context): retrieves the election parameters from the broadcast channel.
+Get(ctx context.Context): retrieves the messages from the broadcast channel.
+Post(ctx context.Context, m Message): posts a new message to the broadcast channel.
+*/
 type BroadcastChannel interface {
 	Id() ElectionID
 	Params(ctx context.Context) (*ElectionParams, error)
@@ -26,6 +35,12 @@ var (
 	ErrInvalidMessageSize = errors.New("pebble: invalid message size")
 )
 
+/*
+Serializes the Message struct into a byte slice.
+Determines the message type based on which field is non-nil.
+Calls the corresponding Bytes() method on the non-nil field to serialize its content.
+Prepends the byte value representing the message type to the serialized payload.
+*/
 func (m Message) Bytes() []byte {
 	var phase ElectionPhase
 	var p []byte
@@ -50,6 +65,11 @@ func (m Message) Bytes() []byte {
 	return r
 }
 
+/*
+Deserializes a byte slice into a Message struct.
+Extracts the message type byte from the first element of the byte slice.
+Based on the message type, initializes the corresponding field of the Message struct and deserializes the remaining bytes using the respective FromBytes() method.
+*/
 func MessageFromBytes(p []byte) (m Message, err error) {
 	if len(p) < 1 {
 		return m, ErrInvalidMessageSize
