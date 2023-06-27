@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/giry-dev/pebble-voting-app/pebble-core/anoncred"
 	"github.com/giry-dev/pebble-voting-app/pebble-core/util"
 	"github.com/giry-dev/pebble-voting-app/pebble-core/voting"
 )
@@ -315,6 +316,82 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		} else {
 			respondText(w, 405, "Method not allowed")
 		}
+
+	} else if depthStr, ok := util.GetSuffix(path, "/user-init/"); ok {
+		if req.Method != http.MethodGet {
+			respondText(w, http.StatusMethodNotAllowed, "Method not allowed")
+			return
+		}
+
+		depth, err := strconv.Atoi(depthStr)
+		if err != nil {
+			respondText(w, 400, fmt.Sprintf("Invalid depth value: %v", err))
+			return
+		}
+		// // Read the parameters from file
+		// params, err := ioutil.ReadFile("anoncred1-params.bin")
+		// if err != nil {
+		// 	respondText(w, 500, fmt.Sprintf("Failed to read parameters file: %v", err))
+		// 	return
+		// }
+
+		credSys := new(anoncred.AnonCred1)
+
+		// err = credSys.FromBytes(params)
+		// if err != nil {
+		// 	return
+		// }
+
+		err = credSys.SetupCircuit(depth)
+		if err != nil {
+			respondText(w, 500, fmt.Sprintf("Failed to setup circuit: %v", err))
+			return
+		}
+
+		fmt.Println("CredSys Initialised (from API) to: ", credSys)
+
+		pkBytes, err := credSys.ProvingKeyToBytes()
+		if err != nil {
+			respondText(w, 500, fmt.Sprintf("Failed to serialize ProvingKey: %v", err))
+			return
+		}
+
+		vkBytes, err := credSys.VerifyingKeyToBytes()
+		if err != nil {
+			respondText(w, 500, fmt.Sprintf("Failed to serialize VerifyingKey: %v", err))
+			return
+		}
+
+		// Base64 encode the keys --> IF WE WANT TO ENCODE THE KEYS
+		// pkEncoded := base64.StdEncoding.EncodeToString(pkBytes)
+		// vkEncoded := base64.StdEncoding.EncodeToString(vkBytes)
+
+		// Define a struct to hold the keys
+		type Keys struct {
+			ProvingKey   []byte `json:"provingKey"`
+			VerifyingKey []byte `json:"verifyingKey"`
+		}
+
+		// Populate the struct
+		keys := Keys{
+			ProvingKey:   pkBytes,
+			VerifyingKey: vkBytes,
+		}
+
+		// Convert the struct to JSON
+		jsonKeys, err := json.Marshal(keys)
+		if err != nil {
+			respondText(w, 500, fmt.Sprintf("Failed to serialize keys to JSON: %v", err))
+			return
+		}
+
+		// Set the response headers
+		w.Header().Add("Content-Length", strconv.Itoa(len(jsonKeys)))
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(200)
+		// Write the JSON to the response body
+		w.Write(jsonKeys)
+
 	} else {
 		respondText(w, 404, "Endpoint not found --> Default handler")
 	}

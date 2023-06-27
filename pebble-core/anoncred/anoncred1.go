@@ -43,6 +43,34 @@ type AnonCred1 struct {
 	vk    groth16.VerifyingKey
 }
 
+func (params *AnonCred1) ProvingKeyToBytes() ([]byte, error) {
+	var pkBuf bytes.Buffer
+	if _, err := params.pk.WriteTo(&pkBuf); err != nil {
+		return nil, err
+	}
+	return pkBuf.Bytes(), nil
+}
+
+func (params *AnonCred1) VerifyingKeyToBytes() ([]byte, error) {
+	var vkBuf bytes.Buffer
+	if _, err := params.vk.WriteTo(&vkBuf); err != nil {
+		return nil, err
+	}
+	return vkBuf.Bytes(), nil
+}
+
+func (params *AnonCred1) ProvingKeyFromBytes(buffer []byte) error {
+	params.pk = groth16.NewProvingKey(curveID)
+	_, err := params.pk.ReadFrom(bytes.NewReader(buffer))
+	return err
+}
+
+func (params *AnonCred1) VerifyingKeyFromBytes(buffer []byte) error {
+	params.vk = groth16.NewVerifyingKey(curveID)
+	_, err := params.vk.ReadFrom(bytes.NewReader(buffer))
+	return err
+}
+
 func (params *AnonCred1) ToBytes() (result []byte, err error) {
 	var csBuf bytes.Buffer
 	if _, err = params.cs.WriteTo(&csBuf); err != nil {

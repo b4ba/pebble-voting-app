@@ -20,7 +20,7 @@ func init() {
 		return
 	}
 	credSys := new(AnonCred1)
-	fmt.Println("credSys: ", credSys)
+	fmt.Println("credSys initialized: ", credSys)
 	err = credSys.FromBytes(params)
 	if err != nil {
 		return
