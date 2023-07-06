@@ -183,6 +183,35 @@ func (k PublicKey) String() (string, error) {
 
 // Parses a string representation of a public key and returns a PublicKey.
 // The function supports parsing keys in both base32c and tz formats.
+// func Parse(s string) (PublicKey, error) {
+// 	if strings.HasPrefix(s, "EPK") {
+// 		p, err := base32c.CheckDecode(s)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		if len(p) < 3 || p[0] != 238 || p[1] != 78 {
+// 			return nil, ErrUnknownKeyType
+// 		}
+// 		return PublicKey(p[2:]), nil
+// 	} else if strings.HasPrefix(s, "tz") {
+// 		var key tezos.Key
+// 		err := key.UnmarshalText([]byte(s))
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		keyBytes, err := key.MarshalBinary()
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		pk := make(PublicKey, len(keyBytes)+1)
+// 		pk[0] = byte(KeyTypeTezos)
+// 		copy(pk[1:], keyBytes)
+// 		return pk, nil
+// 	}
+// 	return nil, ErrUnknownKeyType
+// }
+
+// Updated version of Parse that also return the key type as prefix of the public key.
 func Parse(s string) (PublicKey, error) {
 	if strings.HasPrefix(s, "EPK") {
 		p, err := base32c.CheckDecode(s)
@@ -192,7 +221,8 @@ func Parse(s string) (PublicKey, error) {
 		if len(p) < 3 || p[0] != 238 || p[1] != 78 {
 			return nil, ErrUnknownKeyType
 		}
-		return PublicKey(p[2:]), nil
+		// Create a new public key with type and append the actual key part
+		return newPublicKey(KeyTypeEd25519, p[2:]), nil //<-- here we add the key type
 	} else if strings.HasPrefix(s, "tz") {
 		var key tezos.Key
 		err := key.UnmarshalText([]byte(s))
@@ -203,10 +233,8 @@ func Parse(s string) (PublicKey, error) {
 		if err != nil {
 			return nil, err
 		}
-		pk := make(PublicKey, len(keyBytes)+1)
-		pk[0] = byte(KeyTypeTezos)
-		copy(pk[1:], keyBytes)
-		return pk, nil
+		// Create a new public key with type and append the actual key part
+		return newPublicKey(KeyTypeTezos, keyBytes), nil
 	}
 	return nil, ErrUnknownKeyType
 }
