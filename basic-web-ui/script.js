@@ -35,7 +35,7 @@ function switchPane(pane) {
 function joinElection() {
     let joinStr = document.getElementById("text-join").value;
     showDialog("Joining election...", false);
-    fetch("/api/election/join" + encodeURIComponent(joinStr)).
+    fetch("/api/election/join/" + encodeURIComponent(joinStr)).
         then((responce) => responce.text()).
         then(() => { showElection(joinStr); });
 }

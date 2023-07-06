@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -24,7 +25,8 @@ type handler struct {
 
 func main() {
 	port := rand.Intn(40000) + 10000
-	endpoint := "127.0.0.1:" + strconv.Itoa(port)
+	// endpoint := "127.0.0.1:" + strconv.Itoa(port)
+	endpoint := "localhost:" + strconv.Itoa(port)
 	handler := &handler{
 		file:      "secrets.json",
 		elections: make(map[string]*voting.Election),
@@ -37,23 +39,40 @@ func main() {
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	projectRoot := "/Users/alexbabalitis/Documents/EDINBURGH_UNI/Dissertation/pebble-voting-app"
+
 	path := req.URL.Path
 	if path == "/" {
-		indexFile, _ := os.ReadFile("index.html")
+		indexPath := filepath.Join(projectRoot, "basic-web-ui", "index.html")
+		indexFile, err := os.ReadFile(indexPath)
+		if err != nil {
+			http.Error(w, "File not found", http.StatusNotFound)
+			return
+		}
 		w.Header().Add("Content-Type", "text/html")
 		w.Header().Add("Content-Length", strconv.Itoa(len(indexFile)))
 		w.WriteHeader(200)
 		w.Write(indexFile)
 		return
 	} else if path == "/style.css" {
-		styleFile, _ := os.ReadFile("style.css")
+		stylePath := filepath.Join(projectRoot, "basic-web-ui", "style.css")
+		styleFile, err := os.ReadFile(stylePath)
+		if err != nil {
+			http.Error(w, "File not found", http.StatusNotFound)
+			return
+		}
 		w.Header().Add("Content-Type", "text/css")
 		w.Header().Add("Content-Length", strconv.Itoa(len(styleFile)))
 		w.WriteHeader(200)
 		w.Write(styleFile)
 		return
 	} else if path == "/script.js" {
-		scriptFile, _ := os.ReadFile("script.js")
+		scriptPath := filepath.Join(projectRoot, "basic-web-ui", "script.js")
+		scriptFile, err := os.ReadFile(scriptPath)
+		if err != nil {
+			http.Error(w, "File not found", http.StatusNotFound)
+			return
+		}
 		w.Header().Add("Content-Type", "application/javascript")
 		w.Header().Add("Content-Length", strconv.Itoa(len(scriptFile)))
 		w.WriteHeader(200)
