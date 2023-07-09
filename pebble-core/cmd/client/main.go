@@ -25,8 +25,9 @@ type handler struct {
 
 func main() {
 	port := rand.Intn(40000) + 10000
-	// endpoint := "127.0.0.1:" + strconv.Itoa(port)
-	endpoint := "localhost:" + strconv.Itoa(port)
+	endpoint := "127.0.0.1:" + strconv.Itoa(port)
+	// endpoint := "localhost:" + strconv.Itoa(port)
+	// endpoint := "127.0.0.1:8080"
 	handler := &handler{
 		file:      "secrets.json",
 		elections: make(map[string]*voting.Election),
@@ -100,11 +101,15 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				http.Error(w, fmt.Sprint("Error decoding invitation:", err), http.StatusBadRequest)
 				return
 			}
+			fmt.Println("Invitation:", inv)
 			election, err := voting.NewElectionFromInvitation(ctx, inv, h.file)
+			fmt.Println("Election:", election)
 			if err != nil {
+				fmt.Println("Error creating election:", err)
 				http.Error(w, fmt.Sprint("Error joining election:", err), http.StatusInternalServerError)
 				return
 			}
+			// fmt.Println("Moving to post credential commitment")
 			err = election.PostCredentialCommitment(ctx)
 			if err != nil {
 				http.Error(w, fmt.Sprint("Error posting credential commitment:", err), http.StatusInternalServerError)

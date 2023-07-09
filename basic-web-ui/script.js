@@ -7,14 +7,18 @@ addEventListener("DOMContentLoaded", function () {
 function showDialog(msg, btn) {
     let dialog = document.getElementById("dialog");
     dialog.getElementsByTagName("div")[0].innerText = msg;
-    let button = dialog.getElementsByTagName("button")[0];
-    if (btn) {
-        button.style.display = "";
-    } else {
-        button.style.display = "none";
+    let buttons = dialog.getElementsByTagName("button");
+    if (buttons.length > 0) {
+        let button = buttons[0];
+        if (btn) {
+            button.style.display = "";
+        } else {
+            button.style.display = "none";
+        }
     }
     dialog.style.display = "";
 }
+
 
 function closeDialog() {
     let dialog = document.getElementById("dialog");
@@ -34,6 +38,7 @@ function switchPane(pane) {
 
 function joinElection() {
     let joinStr = document.getElementById("text-join").value;
+    console.log(joinStr);
     showDialog("Joining election...", false);
     fetch("/api/election/join/" + encodeURIComponent(joinStr)).
         then((responce) => responce.text()).

@@ -1,6 +1,9 @@
 package anoncred
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
 var AnonCred1Instance CredentialSystem
 
@@ -15,4 +18,5 @@ func init() {
 		return
 	}
 	AnonCred1Instance = credSys
+	fmt.Println("AnonCred1Instance initialized...")
 }

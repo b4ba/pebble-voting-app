@@ -20,6 +20,9 @@ type BroadcastClient struct {
 }
 
 func NewBroadcastClient(id, uri string) (*BroadcastClient, error) {
+	if !strings.HasPrefix(uri, "http://") && !strings.HasPrefix(uri, "https://") {
+		uri = "http://" + uri
+	}
 	if !strings.HasSuffix(uri, "/") {
 		uri += "/"
 	}
@@ -32,7 +35,7 @@ func NewBroadcastClient(id, uri string) (*BroadcastClient, error) {
 	}
 	bc := &BroadcastClient{
 		paramsURI:   uri + "params/" + id,
-		messagesURI: uri + "message/" + id,
+		messagesURI: uri + "messages/" + id,
 	}
 	copy(bc.eid[:], eid)
 	return bc, nil
