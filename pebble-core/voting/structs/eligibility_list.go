@@ -54,6 +54,32 @@ func (list *EligibilityList) Bytes() []byte {
 	return w.Buffer
 }
 
+//	func (list *EligibilityList) FromBytes(p []byte) error {
+//		r := util.NewBufferReader(p)
+//		m, err := r.ReadUint32()
+//		if err != nil {
+//			return err
+//		}
+//		if m != ellMagic {
+//			return ErrUnknownMagic
+//		}
+//		list.publicKeyHashes = nil
+//		list.idCommitments = nil
+//		for r.Len() != 0 {
+//			pkh, err := r.Read32()
+//			if err != nil {
+//				return err
+//			}
+//			idCom, err := r.Read32()
+//			if err != nil {
+//				return err
+//			}
+//			if !list.Add(pkh, idCom) {
+//				return ErrDuplicateKey
+//			}
+//		}
+//		return nil
+//	}
 func (list *EligibilityList) FromBytes(p []byte) error {
 	r := util.NewBufferReader(p)
 	m, err := r.ReadUint32()
@@ -64,7 +90,7 @@ func (list *EligibilityList) FromBytes(p []byte) error {
 		return ErrUnknownMagic
 	}
 	list.publicKeyHashes = nil
-	list.idCommitments = nil
+	list.idCommitments = make(map[util.HashValue]util.HashValue)
 	for r.Len() != 0 {
 		pkh, err := r.Read32()
 		if err != nil {
