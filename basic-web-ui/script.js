@@ -47,10 +47,10 @@ function joinElection() {
 
 function showElection(invStr) {
     fetch("/api/election/info/" + invStr).
-        then((responce) => responce.json()).
+        then((response) => response.json()).
         then((data) => {
             document.getElementById("election-title").innerText = 'Election "' + data.title + '"';
-            document.getElementById("election-description").innerText = data.desription;
+            document.getElementById("election-description").innerText = data.description;
             closeDialog();
             switchPane("election");
         });

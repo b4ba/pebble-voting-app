@@ -101,15 +101,13 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				http.Error(w, fmt.Sprint("Error decoding invitation:", err), http.StatusBadRequest)
 				return
 			}
-			fmt.Println("Invitation:", inv)
 			election, err := voting.NewElectionFromInvitation(ctx, inv, h.file)
 			fmt.Println("Election:", election)
 			if err != nil {
-				fmt.Println("Error creating election:", err)
 				http.Error(w, fmt.Sprint("Error joining election:", err), http.StatusInternalServerError)
 				return
 			}
-			// fmt.Println("Moving to post credential commitment")
+			fmt.Println("Moving to post credential commitment")
 			err = election.PostCredentialCommitment(ctx)
 			if err != nil {
 				http.Error(w, fmt.Sprint("Error posting credential commitment:", err), http.StatusInternalServerError)
@@ -127,6 +125,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 			h.elections[invStr] = election
 			respondText(w, http.StatusOK, "Joined election")
+			fmt.Println("Successfully joined election!!!")
 			return
 		} else if invStr, ok := util.GetSuffix(path, "/api/election/info/"); ok {
 			election, err := h.election(ctx, invStr)
@@ -146,7 +145,9 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			resp.CastStart = params.CastStart.Format(time.RFC3339)
 			resp.TallyStart = params.TallyStart.Format(time.RFC3339)
 			resp.Choices = params.Choices
-			respondJson(w, election)
+
+			fmt.Println("Election info:", resp)
+			respondJson(w, resp)
 			return
 		}
 	}
