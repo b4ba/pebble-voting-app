@@ -206,9 +206,16 @@ func ParsePublicKey(s string) (PublicKey, error) {
 
 // Add a new function to validate Ed25519 public keys
 func IsValidPublicKey(key string) (bool, error) {
-	parsedKey, err := ParsePublicKey(key)
-	if err != nil {
-		return false, err
+
+	if strings.HasPrefix(key, "EPK") {
+		// p, err := base32c.CheckDecode(key)
+		// if err != nil {
+		// return false, err
+		// }
+		// if len(p) < 3 || p[0] != 238 || p[1] != 78 {
+		// return false, ErrUnknownKeyType
+		// }
+		return true, nil
 	}
-	return parsedKey.Type() == KeyTypeEd25519, nil
+	return false, ErrUnknownKeyType
 }

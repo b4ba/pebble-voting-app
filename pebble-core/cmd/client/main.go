@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -24,10 +23,10 @@ type handler struct {
 }
 
 func main() {
-	port := rand.Intn(40000) + 10000
-	endpoint := "127.0.0.1:" + strconv.Itoa(port)
+	// port := rand.Intn(40000) + 10000
+	// endpoint := "127.0.0.1:" + strconv.Itoa(port)
 	// endpoint := "localhost:" + strconv.Itoa(port)
-	// endpoint := "127.0.0.1:8080"
+	endpoint := "127.0.0.1:8080"
 	handler := &handler{
 		file:      "secrets.json",
 		elections: make(map[string]*voting.Election),
