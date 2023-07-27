@@ -203,3 +203,12 @@ func ParsePublicKey(s string) (PublicKey, error) {
 	}
 	return nil, ErrUnknownKeyType
 }
+
+// Add a new function to validate Ed25519 public keys
+func isValidPublicKey(key string) (bool, error) {
+	parsedKey, err := ParsePublicKey(key)
+	if err != nil {
+		return false, err
+	}
+	return parsedKey.Type() == KeyTypeEd25519, nil
+}
