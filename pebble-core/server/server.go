@@ -259,48 +259,40 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			respondText(w, 405, "Method not allowed")
 		}
 	} else if path == "/register-organization" {
-
 		if req.Method != http.MethodPost {
 			respondText(w, http.StatusMethodNotAllowed, "Method not allowed")
 			return
 		}
-
 		// Decode the public key from the request body
 		var publicKey struct {
 			PK string `json:"pk"`
 		}
 		err := decodeJson(req.Body, &publicKey)
-
 		if err != nil {
 			respondText(w, 400, err.Error())
 			return
 		}
-
 		// Validate the public key
 		check, err := pubkey.IsValidPublicKey(publicKey.PK)
 		if !check {
 			respondText(w, 400, "Invalid public key")
 			return
 		}
-
 		// Load the existing public keys from the file
 		var orgPublicKeys struct {
 			PKs []string `json:"pk"`
 		}
-
 		file, err := os.OpenFile("orgPublicKeys.json", os.O_RDWR|os.O_CREATE, 0666)
 		if err != nil {
 			respondText(w, 500, err.Error())
 			return
 		}
 		defer file.Close()
-
 		err = json.NewDecoder(file).Decode(&orgPublicKeys)
 		if err != nil && err != io.EOF {
 			respondText(w, 500, err.Error())
 			return
 		}
-
 		// Append the new public key if it doesn't exist already
 		alreadyExists := false
 		for _, existingPK := range orgPublicKeys.PKs {
@@ -309,14 +301,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				break
 			}
 		}
-
 		if !alreadyExists {
 			orgPublicKeys.PKs = append(orgPublicKeys.PKs, publicKey.PK)
 		} else {
 			respondText(w, 400, "Public key has already been added")
 			return
 		}
-
 		// Write the public keys back to the file
 		file.Seek(0, 0)
 		file.Truncate(0)
@@ -325,10 +315,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			respondText(w, 500, err.Error())
 			return
 		}
-
 		respondText(w, 200, "Voter has been acknowledged")
 		return
-
 	} else {
 		respondText(w, 404, "Endpoint not found")
 	}
