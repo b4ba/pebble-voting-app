@@ -39,7 +39,7 @@ func main() {
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	projectRoot := "/Users/alexbabalitis/Documents/EDINBURGH_UNI/Dissertation/pebble-voting-app"
+	projectRoot := "/Users/alexbabalitis/Documents/EDINBURGH_UNI/Dissertation/pebble-voting-app" //EDIT TO POINT TO YOUR PROJECT ROOT
 
 	path := req.URL.Path
 	if path == "/" {
