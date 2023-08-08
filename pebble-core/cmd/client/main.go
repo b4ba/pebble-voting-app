@@ -101,7 +101,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 			election, err := voting.NewElectionFromInvitation(ctx, inv, h.file)
-			fmt.Println("Election:", election)
+			fmt.Println("Election created")
 			if err != nil {
 				http.Error(w, fmt.Sprint("Error joining election:", err), http.StatusInternalServerError)
 				return

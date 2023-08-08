@@ -3,7 +3,6 @@ package voting
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/giry-dev/pebble-voting-app/pebble-core/anoncred"
 	"github.com/giry-dev/pebble-voting-app/pebble-core/util"
@@ -83,17 +82,17 @@ func (e *Election) PostCredentialCommitment(ctx context.Context) error {
 		return ErrWrongPhase
 	}
 	priv, err := e.secrets.GetPrivateKey(e.params.EligibilityList)
-	fmt.Println("priv", priv)
+	// fmt.Println("priv", priv)
 	if err != nil {
 		return err
 	}
 	sec, err := e.secrets.GetAnonymitySecret(e.Id(), e.credSys)
-	fmt.Println("sec", sec)
+	// fmt.Println("sec", sec)
 	if err != nil {
 		return err
 	}
 	com, err := sec.Commitment()
-	fmt.Println("com", com)
+	// fmt.Println("com", com)
 	if err != nil {
 		return err
 	}
