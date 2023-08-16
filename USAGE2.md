@@ -36,4 +36,4 @@ This document provides instructions on how to use the Golang version of the back
 
 ## Using the Application
 
-Once both the client and server backends are running, you can use the Pebble Voting App ([refer to the README.md of the frontend repository](https://github.com/b4ba/pebble-frontend/tree/main) to register organizations, create elections,
+Once both the client and server backends are running, you can use the Pebble Voting App ([refer to the README.md of the frontend repository](https://github.com/b4ba/pebble-frontend/tree/main)) to register organizations, create elections,
